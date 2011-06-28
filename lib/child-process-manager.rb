@@ -1,8 +1,39 @@
 require 'socket'
 
 class ChildProcess
+  ##
+  # TERMs a process. If it is still up after +timeout+, KILLs it.
+  def self.term_or_kill(pid, timeout)
+    Process.kill('TERM', pid)
 
-  attr_reader :cmd, :port, :on_connect, :on_stdout, :on_stderr, :connected
+    term_sent_at = Time.now
+
+    loop do
+      begin
+        if Time.now > term_sent_at + timeout
+          Process.kill('KILL', pid)
+          return
+        end
+
+        Process.kill(0, pid)
+        sleep 0.1
+      rescue Errno::ESRCH
+        return
+      end
+    end
+  end
+
+  class TimeoutError < StandardError
+    def initialize(child_process)
+      @child_process = child_process
+    end
+
+    def message
+      "#{ @child_process.cmd } did time out while waiting for port #{ @child_process.port }"
+    end
+  end
+
+  attr_reader :cmd, :port, :on_connect, :on_stdout, :on_stderr, :connected, :kill_timeout
 
   def initialize(opts = {})
     @cmd        = opts[:cmd]
@@ -12,6 +43,9 @@ class ChildProcess
     @io_stdout  = opts[:io_stdout]
     @io_stderr  = opts[:io_stderr]
     @pid        = nil
+
+    @connect_timeout = opts[:kill_timeout] || 5
+    @kill_timeout    = opts[:kill_timeout] || 2
   end
 
   def start
@@ -21,32 +55,36 @@ class ChildProcess
     o[:out] = @io_stdout if @io_stdout
     o[:err] = @io_stderr if @io_stderr
     @pid = Process.spawn(@cmd, o)
+    @spawned_at = Time.now
+
     loop do
-      begin
-        s = TCPSocket.open(@ip, @port)
-        s.close
-        @on_connect.call if @on_connect
-        return
-      rescue Errno::ECONNREFUSED
+      break if listening?
+
+      if Time.now > @spawned_at + @connect_timeout
+        raise TimeoutError.new(self)
       end
+
+      sleep 0.2
     end
   end
 
   def listening?
-    s = TCPSocket.open(@ip, @port)
-    s.close
+    Timeout.timeout(1) do
+      s = TCPSocket.open(@ip, @port)
+      s.close
+    end
 
     return true
+  rescue Timeout::Error
+    return false
   rescue Errno::ECONNREFUSED
     return false
   end
 
   def stop
-    begin
+    if @pid
       Process.detach(@pid)
-      Process.kill('TERM', @pid)
-      Process.waitpid(@pid)
-    rescue
+      ChildProcess.term_or_kill(@pid, @kill_timeout)
     end
   end
 
