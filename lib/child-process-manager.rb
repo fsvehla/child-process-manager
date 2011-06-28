@@ -1,6 +1,6 @@
 require 'socket'
 
-class ChildProcess 
+class ChildProcess
 
   attr_reader :cmd, :port, :on_connect, :on_stdout, :on_stderr, :connected
 
@@ -12,10 +12,11 @@ class ChildProcess
     @io_stdout  = opts[:io_stdout]
     @io_stderr  = opts[:io_stderr]
     @pid        = nil
-    @connected  = false
   end
 
   def start
+    return if listening?
+
     o = {:out => '/dev/null', :err => '/dev/null'}
     o[:out] = @io_stdout if @io_stdout
     o[:err] = @io_stderr if @io_stderr
@@ -31,12 +32,21 @@ class ChildProcess
     end
   end
 
+  def listening?
+    s = TCPSocket.open(@ip, @port)
+    s.close
+
+    return true
+  rescue Errno::ECONNREFUSED
+    return false
+  end
+
   def stop
     begin
       Process.detach(@pid)
       Process.kill('TERM', @pid)
       Process.waitpid(@pid)
-    rescue 
+    rescue
     end
   end
 
