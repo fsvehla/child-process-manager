@@ -46,19 +46,27 @@ class ChildProcess
 
     @connect_timeout = opts[:kill_timeout] || 5
     @kill_timeout    = opts[:kill_timeout] || 2
+    @pidfile         = opts[:pidfile]
+    @before_start    = opts[:before_start]
   end
 
   def start
     return if listening?
 
+    @before_start && @before_start.call
+
     o = {:out => '/dev/null', :err => '/dev/null'}
     o[:out] = @io_stdout if @io_stdout
     o[:err] = @io_stderr if @io_stderr
+
     @pid = Process.spawn(@cmd, o)
     @spawned_at = Time.now
 
     loop do
-      break if listening?
+      if listening?
+        @on_connect && @on_connect.call
+        return
+      end
 
       if Time.now > @spawned_at + @connect_timeout
         raise TimeoutError.new(self)
@@ -86,8 +94,13 @@ class ChildProcess
       Process.detach(@pid)
       ChildProcess.term_or_kill(@pid, @kill_timeout)
     end
-  end
 
+    if @pidfile && File.file?(@pidfile)
+      pidfile_pid = Integer(File.read(@pidfile).chomp)
+
+      ChildProcess.term_or_kill(pidfile_pid, @kill_timeout)
+    end
+  end
 end
 
 class ChildProcessManager
