@@ -1,10 +1,6 @@
+task :default =>[:spec]
 
-
-
-namespace :examples do
-  desc "Run the em-redis example."
-  task :em_redis do
-    system('bundle exec rspec examples/em-redis/em-redis_spec.rb')
-    system('bundle exec ruby examples/em-redis/em-redis_test.rb')
-  end
+task :spec do
+  system("bundle exec rspec spec/integration/child_process_manager_spec.rb")
 end
+
