@@ -95,7 +95,7 @@ class ChildProcess
       Process.detach(@pid)
       begin
         ChildProcess.term_or_kill(@pid, @kill_timeout)
-      resuce Errno::ERSCH
+      resuce Errno::ESRCH
         STDERR.puts("warning: process #{@cmd} was already dead")
       end
     end
