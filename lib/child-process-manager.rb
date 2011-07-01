@@ -93,7 +93,11 @@ class ChildProcess
   def stop
     if @pid
       Process.detach(@pid)
-      ChildProcess.term_or_kill(@pid, @kill_timeout)
+      begin
+        ChildProcess.term_or_kill(@pid, @kill_timeout)
+      resuce Errno::ERSCH
+        STDERR.puts("warning: process #{@cmd} was already dead")
+      end
     end
 
     if @pidfile && File.file?(@pidfile)
