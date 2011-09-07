@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+require 'child_process_manager'
+
+case ARGV[0]
+when 'info'
+  file = File.expand_path('ChildProcessFile.rb')
+
+  puts '%-25s %5s %s' % ['CHILD PROCESS SPEC', 'PORT', 'STALE PROCESSES']
+
+  ChildProcessManager.load_config(file)
+  ChildProcessManager.managed_processes.each do |spec|
+    port            = spec.port
+    stale_processes = ChildProcessManager::OS::OpenFile.tcp_port(port)
+
+    comment = if stale_processes.any?
+                stale_processes.collect { |p| "#{ p.pid } (#{ p.command })" }.join(', ')
+              end
+
+    puts '%-25s %5d %s' % [spec.tag, spec.port, comment]
+  end
+end
+

@@ -14,6 +14,9 @@ Gem::Specification.new do |s|
   s.files = Dir['lib/**/*']
   s.test_files = Dir['spec/**/*']
 
+  s.bindir = 'bin'
+  s.executables =  ['cpm']
+
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
 
