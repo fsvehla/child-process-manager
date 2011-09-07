@@ -44,6 +44,7 @@ class ChildProcess
     @io_stdout  = opts[:io_stdout]
     @io_stderr  = opts[:io_stderr]
     @pid        = nil
+    @tag        = opts[:tag] || opts[:cmd]
 
     @connect_timeout = opts[:kill_timeout] || 5
     @kill_timeout    = opts[:kill_timeout] || 2
