@@ -34,13 +34,13 @@ class ChildProcess
     end
   end
 
-  attr_reader :cmd, :port, :on_connect, :on_stdout, :on_stderr, :connected, :kill_timeout
+  attr_reader :cmd, :port, :on_ready, :on_stdout, :on_stderr, :connected, :kill_timeout
 
   def initialize(opts = {})
     @cmd        = opts[:cmd]
     @ip         = opts[:ip] || '127.0.0.1'
     @port       = opts[:port]
-    @on_connect = opts[:on_connect]
+    @on_ready   = opts[:on_ready] || opts[:on_connect]
     @io_stdout  = opts[:io_stdout]
     @io_stderr  = opts[:io_stderr]
     @pid        = nil
@@ -52,7 +52,12 @@ class ChildProcess
   end
 
   def start
-    return if listening?
+    if listening?
+      @on_ready && @on_ready.call
+      return
+    else
+      debug "#{ @tag } isn't listening on #{ @port }. Spawning"
+    end
 
     @before_start && @before_start.call
 
@@ -65,7 +70,7 @@ class ChildProcess
 
     loop do
       if listening?
-        @on_connect && @on_connect.call
+        @on_ready && @on_ready.call
         return
       end
 
