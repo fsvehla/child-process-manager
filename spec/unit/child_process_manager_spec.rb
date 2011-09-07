@@ -50,5 +50,13 @@ describe ChildProcessManager do
       ChildProcessManager.reap_all
     end
   end
+
+  describe 'load_config_file' do
+    it 'simply calls Kernel.load with the file' do
+      Kernel.expects(:load).with('/this/file')
+
+      ChildProcessManager.load_config('/this/file')
+    end
+  end
 end
 

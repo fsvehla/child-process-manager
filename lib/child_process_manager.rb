@@ -9,6 +9,10 @@ module ChildProcessManager
     end
   end
 
+  def self.load_config(path)
+    Kernel.load(path)
+  end
+
   # Returns an array of spawned processes. Processes that were already spawned,
   # aren't returned.
   def self.add(process_options)
