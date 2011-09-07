@@ -19,5 +19,19 @@ when 'info'
 
     puts '%-25s %5d %s' % [spec.tag, spec.port, comment]
   end
+when 'kill-stale'
+  file = File.expand_path('ChildProcessFile.rb')
+
+  ChildProcessManager.load_config(file)
+  ChildProcessManager.managed_processes.each do |spec|
+    port            = spec.port
+    stale_processes = ChildProcessManager::OS::OpenFile.tcp_port(port)
+
+    stale_processes.each do |stale|
+      puts "Killing stale process #{ stale.pid } (#{ stale.command }) for port #{ port }"
+
+      ChildProcessManager::GracefulKiller.kill(stale.pid, 5)
+    end
+  end
 end
 
