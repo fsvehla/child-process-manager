@@ -34,7 +34,7 @@ class ChildProcess
     end
   end
 
-  attr_reader :cmd, :port, :on_ready, :on_stdout, :on_stderr, :connected, :kill_timeout
+  attr_reader :cmd, :port, :on_ready, :on_stdout, :on_stderr, :connected, :kill_timeout, :tag, :ip
 
   def initialize(opts = {})
     @cmd        = opts[:cmd]
@@ -55,6 +55,10 @@ class ChildProcess
   def debug(line)
     now   = Time.now
     STDERR.puts "\033[32m[CPM]\033[0m #{ now.strftime('%H:%M:%S') }.#{ '%03d' % (now.usec / 1000) } -- #{ line }"
+  end
+
+  def hash
+    "#{ @ip }:#{ @port }".hash
   end
 
   def start
@@ -124,58 +128,51 @@ class ChildProcess
   end
 end
 
-class ChildProcessManager
+require 'set'
 
-  def self.init
-    @@managed_processes ||= {}
+class ChildProcessManager
+  class << self
+    def managed_processes
+      @managed_processes ||= []
+    end
   end
 
-  def self.spawn(processes)
-    self.init
+  # Returns an array of spawned processes. Processes that were already spawned,
+  # aren't returned.
+  def self.add(process_options)
+    child_process = ChildProcess.new(process_options)
 
-    if processes.is_a?(Hash)
-      processes = [processes]
+    unless managed_processes.any? { |p| p.hash == child_process.hash }
+      managed_processes << child_process
+      child_process
     end
+  end
 
-    processes.each do |process_options|
-      process_options[:ip] ||= '127.0.0.1'
-      mpskey = "#{process_options[:ip]}:#{process_options[:port]}"
-
-      if !@@managed_processes[mpskey]
-        cp = ChildProcess.new(process_options)
-        cp.start
-        @@managed_processes[mpskey] = cp
-      end
+  def self.spawn(process_options)
+    if process = self.add(process_options)
+      process.start
     end
   end
 
   def self.reap_all
-    self.init
-
-    @@managed_processes.each do |address,child_process|
-      child_process.stop if child_process
-      @@managed_processes.delete(address)
+    managed_processes.each do |process|
+      process.stop
     end
   end
 
-  def self.managed_processes
-    @@managed_processes
-  end
-
   def self.reap_one(*args)
-    self.init
-    port = 0; ip = '127.0.0.1'
+    port = 0
+    ip   = '127.0.0.1'
 
     if args.size == 1
       port = args[0]
     elsif args.size == 2
-      ip = args[0]
+      ip  = args[0]
       port = args[1]
     end
-    address = "#{ip}:#{port}"
-    if @@managed_processes[address]
-      @@managed_processes[address].stop
-      @@managed_processes.delete(address)
+
+    if process = managed_processes.find { |p| p.port == port && p.ip == ip }
+      process.stop
     end
   end
 end
