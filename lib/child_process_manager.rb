@@ -24,6 +24,10 @@ module ChildProcessManager
     end
   end
 
+  def self.start
+    managed_processes.each { |p| p.start }
+  end
+
   def self.spawn(process_options)
     if process = self.add(process_options)
       process.start

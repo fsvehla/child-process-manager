@@ -58,5 +58,17 @@ describe ChildProcessManager do
       ChildProcessManager.load_config('/this/file')
     end
   end
+
+  describe '.start' do
+    it 'sends start to all child processes' do
+      one = ChildProcessManager.add(host: '127.0.0.1', port: 7747)
+      two = ChildProcessManager.add(host: '127.0.0.1', port: 5525)
+
+      one.expects(:start)
+      two.expects(:start)
+
+      ChildProcessManager.start
+    end
+  end
 end
 
