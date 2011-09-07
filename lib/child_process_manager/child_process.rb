@@ -19,6 +19,7 @@ module ChildProcessManager
       @cmd        = opts[:cmd]
       @ip         = opts[:ip] || '127.0.0.1'
       @port       = opts[:port]
+      @kill_signal = opts[:kill_signal] || 'TERM'
       @on_ready   = opts[:on_ready] || opts[:on_connect]
       @io_stdout  = opts[:io_stdout]
       @io_stderr  = opts[:io_stderr]
@@ -87,19 +88,19 @@ module ChildProcessManager
     end
 
     def stop
-      if @pid
-        Process.detach(@pid)
-
-        debug "Gracefully killing our spawned child process #{ @tag } with PID #{ @pid }..."
-
-        signal = ChildProcessManager::GracefulKiller.kill(@pid,  @kill_timeout)
-        debug "Stopped #{ @tag } with SIG#{ signal }"
-      elsif @pidfile && File.file?(@pidfile)
+      if @pidfile && File.file?(@pidfile)
         pidfile_pid = Integer(File.read(@pidfile).chomp)
 
         debug "Gracefully killing process #{ @tag } with PID #{ pidfile_pid } from #{ @pidfile }..."
 
         signal = ChildProcessManager::GracefulKiller.kill(pidfile_pid,  @kill_timeout)
+        debug "Stopped #{ @tag } with SIG#{ signal }"
+      elsif @pid
+        Process.detach(@pid)
+
+        debug "Gracefully killing our spawned child process #{ @tag } with PID #{ @pid }..."
+
+        signal = ChildProcessManager::GracefulKiller.kill(@pid,  @kill_timeout)
         debug "Stopped #{ @tag } with SIG#{ signal }"
       end
     end
