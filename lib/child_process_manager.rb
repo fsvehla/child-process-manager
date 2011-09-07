@@ -3,6 +3,7 @@
 module ChildProcessManager
   autoload :ChildProcess,   'child_process_manager/child_process'
   autoload :GracefulKiller, 'child_process_manager/graceful_killer'
+  autoload :OS,             'child_process_manager/os/open_file'
 
   class << self
     def managed_processes
