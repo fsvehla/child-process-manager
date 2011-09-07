@@ -1,7 +1,8 @@
 #require 'child-process-manager/child_process'
 
 module ChildProcessManager
-  autoload :ChildProcess, 'child_process_manager/child_process'
+  autoload :ChildProcess,   'child_process_manager/child_process'
+  autoload :GracefulKiller, 'child_process_manager/graceful_killer'
 
   class << self
     def managed_processes

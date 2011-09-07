@@ -3,28 +3,6 @@ require 'timeout'
 
 module ChildProcessManager
   class ChildProcess
-    ##
-    # TERMs a process. If it is still up after +timeout+, KILLs it.
-    def self.term_or_kill(pid, timeout)
-      Process.kill('TERM', pid)
-
-      term_sent_at = Time.now
-
-      loop do
-        begin
-          if Time.now > term_sent_at + timeout
-            Process.kill('KILL', pid)
-            return
-          end
-
-          Process.kill(0, pid)
-          sleep 0.1
-        rescue Errno::ESRCH
-          return
-        end
-      end
-    end
-
     class TimeoutError < StandardError
       def initialize(child_process)
         @child_process = child_process
@@ -112,19 +90,17 @@ module ChildProcessManager
       if @pid
         Process.detach(@pid)
 
-        debug "stopping #{ @tag } with PID #{ @pid }"
+        debug "Gracefully killing our spawned child process #{ @tag } with PID #{ @pid }..."
 
-        begin
-          ChildProcess.term_or_kill(@pid, @kill_timeout)
-        rescue Errno::ESRCH
-          STDERR.puts("warning: process #{@cmd} was already dead")
-        end
-      end
-
-      if @pidfile && File.file?(@pidfile)
+        signal = ChildProcessManager::GracefulKiller.kill(@pid,  @kill_timeout)
+        debug "Stopped #{ @tag } with SIG#{ signal }"
+      elsif @pidfile && File.file?(@pidfile)
         pidfile_pid = Integer(File.read(@pidfile).chomp)
 
-        ChildProcess.term_or_kill(pidfile_pid, @kill_timeout)
+        debug "Gracefully killing process #{ @tag } with PID #{ pidfile_pid } from #{ @pidfile }..."
+
+        signal = ChildProcessManager::GracefulKiller.kill(pidfile_pid,  @kill_timeout)
+        debug "Stopped #{ @tag } with SIG#{ signal }"
       end
     end
   end
