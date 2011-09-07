@@ -52,8 +52,15 @@ class ChildProcess
     @before_start    = opts[:before_start]
   end
 
+  def debug(line)
+    now   = Time.now
+    STDERR.puts "\033[32m[CPM]\033[0m #{ now.strftime('%H:%M:%S') }.#{ '%03d' % (now.usec / 1000) } -- #{ line }"
+  end
+
   def start
     if listening?
+      debug "#{ @tag } was already up"
+
       @on_ready && @on_ready.call
       return
     else
@@ -99,6 +106,9 @@ class ChildProcess
   def stop
     if @pid
       Process.detach(@pid)
+
+      debug "stopping #{ @tag } with PID #{ @pid }"
+
       begin
         ChildProcess.term_or_kill(@pid, @kill_timeout)
       rescue Errno::ESRCH
