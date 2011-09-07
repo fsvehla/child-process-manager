@@ -1,5 +1,6 @@
-require 'spec/spec_helper'
-require 'child-process-manager'
+require_relative '../spec_helper'
+
+require 'child_process_manager'
 
 describe ChildProcessManager do
   before do

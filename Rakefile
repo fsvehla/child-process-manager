@@ -1,6 +1,6 @@
 task :default =>[:spec]
 
 task :spec do
-  system("bundle exec rspec -I. spec/unit")
+  system("bundle exec rspec spec/unit")
 end
 
