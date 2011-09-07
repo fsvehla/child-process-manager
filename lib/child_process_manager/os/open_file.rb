@@ -16,7 +16,6 @@ module ChildProcessManager
       HEADER = [:command, :pid, :user, :fd, :type, :device, :size, :node, :name]
 
       def self.parse_lsof_line(line)
-        header  = [:command, :pid, :user, :fd, :type, :device, :size, :node, :name]
         columns = line.split(/\s+/)
 
         # Last column may contain spaces
