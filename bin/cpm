@@ -33,5 +33,24 @@ when 'kill-stale'
       ChildProcessManager::GracefulKiller.kill(stale.pid, 5)
     end
   end
+when 'start'
+  file = File.expand_path('ChildProcessFile.rb')
+
+  puts "Starting..."
+
+  ChildProcessManager.load_config(file)
+  ChildProcessManager.start
+
+  puts
+  puts "CTRL-C to stop"
+
+  run = true
+  trap('INT') { run = false }
+
+  while run
+    sleep 0.1
+  end
+
+  ChildProcessManager.reap_all
 end
 
