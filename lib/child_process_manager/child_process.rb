@@ -36,16 +36,37 @@ module ChildProcessManager
       return unless ChildProcessManager.debug
 
       now   = Time.now
-      STDERR.puts "\033[32m[CPM]\033[0m #{ now.strftime('%H:%M:%S') }.#{ '%03d' % (now.usec / 1000) } -- #{ line }"
+      STDERR.puts "\033[32m[CPM] DEBUG\033[0m #{ now.strftime('%H:%M:%S') }.#{ '%03d' % (now.usec / 1000) } -- #{ line }"
+    end
+
+    def warn(line)
+      now   = Time.now
+      STDERR.puts "\033[33m[CPM] WARN\033[0m #{ now.strftime('%H:%M:%S') }.#{ '%03d' % (now.usec / 1000) } -- #{ line }"
     end
 
     def hash
       "#{ @ip }:#{ @port }".hash
     end
 
+    def processes_on_port
+      ChildProcessManager::OS::OpenFile.tcp_port(@port)
+    end
+
     def start
       if listening?
         debug "#{ @tag } was already up"
+
+        if processes_on_port.any?
+          warn "#{ @tag } a processes was already started on our port, stopping it before we start our own..."
+
+          processes_on_port.each do |process|
+            ChildProcessManager::GracefulKiller.kill(process.pid, 5)
+          end
+
+          warn "#{ @tag } starting..."
+
+          return start
+        end
 
         @on_ready && @on_ready.call
         return
