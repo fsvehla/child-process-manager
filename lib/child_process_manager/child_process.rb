@@ -33,6 +33,8 @@ module ChildProcessManager
     end
 
     def debug(line)
+      return unless ChildProcessManager.debug
+
       now   = Time.now
       STDERR.puts "\033[32m[CPM]\033[0m #{ now.strftime('%H:%M:%S') }.#{ '%03d' % (now.usec / 1000) } -- #{ line }"
     end

@@ -1,8 +1,27 @@
 #!/usr/bin/env ruby
 
 require 'child_process_manager'
+require 'trollop'
 
-case ARGV[0]
+SUB_COMMANDS = ['info', 'kill-stale', 'start']
+
+global_opts = Trollop::options do
+  banner "ChildProcessManager CLI interface\n\nSubcommands: info kill-stale start"
+
+  opt :debug, "output debug messages", :short => "-d"
+
+  stop_on SUB_COMMANDS
+end
+
+# Further options
+cmd = ARGV.shift # get the subcommand
+
+cmd_opts = case cmd
+           when 'info', 'kill-stale', 'start' # parse delete options
+           else
+             Trollop::die "unknown subcommand #{cmd.inspect}"
+           end
+case cmd
 when 'info'
   file = File.expand_path('ChildProcessFile.rb')
 
@@ -34,6 +53,8 @@ when 'kill-stale'
     end
   end
 when 'start'
+  ChildProcessManager.debug = global_opts[:debug]
+
   file = File.expand_path('ChildProcessFile.rb')
 
   puts "Starting..."

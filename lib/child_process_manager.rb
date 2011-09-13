@@ -9,6 +9,11 @@ module ChildProcessManager
     def managed_processes
       @managed_processes ||= []
     end
+
+    attr_accessor :debug
+    def debug
+      ENV['CPM_DEBUG'] || @debug
+    end
   end
 
   def self.load_config(path)
