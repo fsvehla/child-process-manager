@@ -31,8 +31,23 @@ module ChildProcessManager
     end
   end
 
-  def self.start
-    managed_processes.each { |p| p.start }
+  def self.start(options = {})
+    options = options.dup
+    only    = options.delete(:only)
+
+    raise(ArgumentError, "Unknown options: #{ options.keys }") if options.keys.any?
+
+    processes_to_start = if only
+      only.collect do |tag|
+        managed_processes.find { |p| p.tag.to_s == tag } || raise("There is no process with the tag #{ tag } loaded")
+      end
+    else
+      managed_processes
+    end
+
+    STDERR.puts "Starting processes: #{ processes_to_start.map { |p| p.tag }.join(', ') }"
+
+    processes_to_start.each { |p| p.start }
   end
 
   def self.spawn(process_options)

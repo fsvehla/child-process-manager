@@ -69,6 +69,20 @@ describe ChildProcessManager do
 
       ChildProcessManager.start
     end
+
+    context 'with only option and an array of strings given' do
+      it 'starts only processes which are loaded and match the string' do
+        first  = ChildProcessManager.add(tag: 'first',  host: '127.0.0.1', port: 1001)
+        second = ChildProcessManager.add(tag: 'second', host: '127.0.0.1', port: 1002)
+        third  = ChildProcessManager.add(tag: 'three',  host: '127.0.0.1', port: 1003)
+
+        first.expects(:start).once
+        second.expects(:start).once
+        third.expects(:start).never
+
+        ChildProcessManager.start(:only => ['first', 'second'])
+      end
+    end
   end
 end
 
