@@ -21,6 +21,7 @@ cmd_opts = case cmd
            else
              Trollop::die "unknown subcommand #{cmd.inspect}"
            end
+
 case cmd
 when 'info'
   file = File.expand_path('ChildProcessFile.rb')
@@ -60,7 +61,11 @@ when 'start'
   puts "Starting..."
 
   ChildProcessManager.load_config(file)
-  ChildProcessManager.start
+  only = if ARGV.any?
+           ARGV
+         end
+
+  ChildProcessManager.start(:only => only)
 
   puts
   puts "CTRL-C to stop"
