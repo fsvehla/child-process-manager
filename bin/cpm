@@ -58,14 +58,25 @@ when 'start'
 
   file = File.expand_path('ChildProcessFile.rb')
 
-  puts "Starting..."
+	# Parse rest
+	start_opts = Trollop::options do
+		opt :only,   "only"
+		opt :except, "except"
+	end
+
 
   ChildProcessManager.load_config(file)
   only = if ARGV.any?
            ARGV
          end
 
-  ChildProcessManager.start(:only => only)
+	if start_opts[:except]
+		ChildProcessManager.start(:except => ARGV)
+	elsif start_opts[:only] || ARGV.any?
+		ChildProcessManager.start(:only => ARGV)
+	else
+		ChildProcessManager.start
+	end
 
   puts
   puts "CTRL-C to stop"
